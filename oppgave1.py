@@ -59,11 +59,11 @@ def numeric_range_analysis():
     print('Sum:', total_sum)
 
 
-# 1.4 meny
+# 1.4 Menu
 def main():
     while True:
         # Отображение меню в терминале
-        print('\n=== MENY ===')
+        print('\n=== MENU ===')
         print('1. Calculate time spent')
         print('2. Analyze text')
         print('3. Analyze number range')
