@@ -21,4 +21,28 @@ def calculation_of_time_spent():
     minutes = total_time_spent % 60
     print('Total time spent: ' + str(hours) + ' hours, ' + str(minutes) + ' minutes')
 
-calculation_of_time_spent()
+# calculation_of_time_spent()
+
+
+# 1.2
+
+def read_text(prompt='Enter text: ') -> str:
+    while True:
+        text_example = input(prompt)
+        if not text_example.strip():
+            print("Error: text must not be empty or consist of spaces only!")
+            continue
+        return text_example
+
+def text_analysis():
+    text_example = read_text()
+    print(text_example)
+    print(len(text_example.replace(' ', '')))
+    print(len(text_example))
+    print(text_example.replace(' ', ''))
+    print(text_example.lower())
+    print(text_example[::-1])
+    print('python' in text_example.lower())
+
+# example: Hello World!@Python
+text_analysis()
