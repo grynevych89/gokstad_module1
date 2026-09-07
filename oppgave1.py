@@ -7,7 +7,7 @@ def read_non_negative(prompt):
         except ValueError:
             print('Please enter valid number')
             continue
-        if value >= 0:
+        if value > 0:
             return value
         print('Please enter valid number')
 
