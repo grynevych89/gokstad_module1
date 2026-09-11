@@ -62,7 +62,6 @@ def numeric_range_analysis():
 # 1.4 Menu
 def main():
     while True:
-        # Отображение меню в терминале
         print('\n=== MENU ===')
         print('1. Calculate time spent')
         print('2. Analyze text')
