@@ -1,0 +1,34 @@
+SUPPORT REPORT
+========================================
+
+Valid requests: 15
+
+Requests per category
+----------------------------------------
+utstyr: 5
+innlogging: 4
+programvare: 4
+nettverk: 2
+
+Time spent
+----------------------------------------
+Total time: 466 minutes
+Average time: 31.1 minutes
+
+Status
+----------------------------------------
+Resolved requests: 9
+Unresolved requests: 6
+
+Category with most requests
+----------------------------------------
+utstyr (5 requests)
+
+Unresolved requests sorted by time spent (descending)
+----------------------------------------
+id 13 - utstyr - 63 minutes
+id 4 - utstyr - 55 minutes
+id 10 - programvare - 48 minutes
+id 2 - programvare - 42 minutes
+id 17 - utstyr - 39 minutes
+id 7 - nettverk - 35 minutes
