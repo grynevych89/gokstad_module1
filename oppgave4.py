@@ -29,7 +29,10 @@ def parse_integer(field: str, text: str, minimum: int) -> int:
 
 
 def parse_row(raw_row: dict[str, str]) -> Request:
-    row = {key: (value or '').strip() for key, value in raw_row.items()}
+    if None in raw_row:
+        raise ValueError('too many fields')
+    row = {field: (raw_row.get(field) or '').strip() for field in REQUIRED_FIELDS}
+
     for field in REQUIRED_FIELDS:
         if not row.get(field):
             raise ValueError(f'field {field} is empty or missing')
