@@ -1,109 +1,64 @@
-from data import sessions
-from helpers import read_integer
+from constants import STATUSES
+from data import Session, sessions
+from helpers import read_choice, read_integer, read_text, run_menu, show_numbered
 
 
-# Helpers
-def print_session(session, index=None):
-    prefix = f'{index}. ' if index is not None else '- '
-    print(f'{prefix}{session["topic"]} | '
-          f'{session["duration_minutes"]} min | {session["status"]}')
+def format_session(session: Session) -> str:
+    return f'{session["topic"]} | {session["duration_minutes"]} min | {session["status"]}'
 
 
-def show_sessions(items, empty_message='No sessions to show.'):
-    if not items:
-        print(empty_message)
-        return
-    for i, session in enumerate(items, start=1):
-        print_session(session, i)
+def show_sessions(items: list[Session], empty_message: str = 'No sessions to show.') -> None:
+    show_numbered(items, empty_message, format_session)
 
 
-def register_session():
-    topic = input('Topic: ').strip()
-    while not topic:
-        print('Topic cannot be empty.')
-        topic = input('Topic: ').strip()
-
-    duration = read_integer('Duration in minutes: ', minimum=1)
-
-    status = input('Status (planned/completed): ').strip().lower()
-    while status not in ('planned', 'completed'):
-        print('Status must be \'planned\' or \'completed\'.')
-        status = input('Status (planned/completed): ').strip().lower()
-
-    sessions.append({
-        'topic': topic,
-        'duration_minutes': duration,
-        'status': status,
+def register_session(items: list[Session]) -> None:
+    items.append({
+        'topic': read_text('Topic: '),
+        'duration_minutes': read_integer('Duration in minutes: ', minimum=1),
+        'status': read_choice('Status', STATUSES),
     })
     print('Session registered.')
 
 
-def show_completed():
-    completed = [s for s in sessions if s['status'] == 'completed']
-    show_sessions(completed, 'No completed sessions.')
+def completed_sessions(items: list[Session]) -> list[Session]:
+    return [s for s in items if s['status'] == 'completed']
 
 
-def search_topic():
-    keyword = input('Search word: ').strip().lower()
-    if not keyword:
-        print('Search word cannot be empty.')
-        return
-    matches = [s for s in sessions if keyword in s['topic'].lower()]
+def show_completed(items: list[Session]) -> None:
+    show_sessions(completed_sessions(items), 'No completed sessions.')
+
+
+def search_topic(items: list[Session]) -> None:
+    keyword = read_text('Search word: ').lower()
+    matches = [s for s in items if keyword in s['topic'].lower()]
     show_sessions(matches, f'No matches for {keyword!r}.')
 
 
-def sort_by_duration():
-    ordered = sorted(sessions, key=lambda s: s['duration_minutes'], reverse=True)
-    show_sessions(ordered)
+def sort_by_duration(items: list[Session]) -> None:
+    show_sessions(sorted(items, key=lambda s: s['duration_minutes'], reverse=True))
 
 
-def show_statistics():
-    completed = [s for s in sessions if s['status'] == 'completed']
+def show_statistics(items: list[Session]) -> None:
+    completed = completed_sessions(items)
     if not completed:
         print('No completed sessions to calculate.')
         return
     total = sum(s['duration_minutes'] for s in completed)
-    average = total / len(completed)
     print(f'Completed sessions: {len(completed)}')
     print(f'Total duration: {total} min')
-    print(f'Average duration: {average:.1f} min')
+    print(f'Average duration: {total / len(completed):.1f} min')
 
 
-def main():
-    while True:
-        print('\n--- STUDY SESSIONS ---')
-        print('1. Register a study session')
-        print('2. Show all sessions')
-        print('3. Show only completed sessions')
-        print('4. Search for a word in the topic')
-        print('5. Sort sessions by duration (longest first)')
-        print('6. Show total and average duration (completed)')
-        print('7. Exit')
-        choice = input('Select an option (1-7): ').strip()
-
-        if choice == '1':
-            print('\n--- [Running: 1. Register a study session] ---')
-            register_session()
-        elif choice == '2':
-            print('\n--- [Running: 2. Show all sessions] ---')
-            show_sessions(sessions, '\n--- [No sessions registered.] ---')
-        elif choice == '3':
-            print('\n--- [Running: 3. Show only completed sessions] ---')
-            show_completed()
-        elif choice == '4':
-            print('\n--- [Running: 4. Search for a word in the topic] ---')
-            search_topic()
-        elif choice == '5':
-            print('\n--- [Running: 5. Sort sessions by duration] ---')
-            sort_by_duration()
-        elif choice == '6':
-            print('\n--- [Running: 6. Total and average duration] ---')
-            show_statistics()
-        elif choice == '7':
-            print('\nProgram exiting. Goodbye!')
-            break
-        else:
-            print('\n[Error]: Invalid choice. Please enter a number between 1 and 7.')
+def main() -> None:
+    items = sessions
+    run_menu('STUDY SESSIONS', [
+        ('Register a study session', lambda: register_session(items)),
+        ('Show all sessions', lambda: show_sessions(items, 'No sessions registered.')),
+        ('Show only completed sessions', lambda: show_completed(items)),
+        ('Search for a word in the topic', lambda: search_topic(items)),
+        ('Sort sessions by duration (longest first)', lambda: sort_by_duration(items)),
+        ('Show total and average duration (completed)', lambda: show_statistics(items)),
+    ])
 
 
 if __name__ == '__main__':
