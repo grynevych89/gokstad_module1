@@ -1,10 +1,25 @@
 from datetime import date, datetime, timedelta, time
 from constants import TIME_FORMAT
-from helpers import read_integer, read_date, format_date, parse_date, read_time
+from helpers import format_date, parse_date, read_date, read_integer, run_menu, show_numbered
 
 
-def read_date_list():
-    dates = []
+def parse_time(text: str) -> time:
+    text = text.strip()
+    if len(text) != 5:
+        raise ValueError
+    return datetime.strptime(text, TIME_FORMAT).time()
+
+
+def read_time(prompt: str = 'Start time (hh:mm): ') -> time:
+    while True:
+        try:
+            return parse_time(input(prompt))
+        except ValueError:
+            print('Error: invalid time. Use hh:mm, for example 18:30.')
+
+
+def read_date_list() -> list[date]:
+    dates: list[date] = []
     while True:
         text = input('Date (empty line to finish): ').strip()
         if not text:
@@ -32,7 +47,7 @@ def sort_dates(dates: list[date]) -> list[date]:
     return sorted(dates)
 
 
-def plan_session():
+def plan_session() -> None:
     session_date = read_date('Session date (dd.mm.yyyy): ')
     start = read_time('Start time (hh:mm): ')
     minutes = read_integer('Duration in minutes: ', 1)
@@ -42,50 +57,28 @@ def plan_session():
           f'{finish.strftime(TIME_FORMAT)}{suffix} | {minutes} min')
 
 
-def count_days():
+def count_days() -> None:
     first = read_date('First date (dd.mm.yyyy): ')
     second = read_date('Second date (dd.mm.yyyy): ')
     print(f'Days between: {days_between(first, second)}')
 
 
-def show_sorted_dates():
-    ordered = sort_dates(read_date_list())
-    for i, value in enumerate(ordered, start=1):
-        print(f'{i}. {format_date(value)}')
+def show_sorted_dates() -> None:
+    show_numbered(sort_dates(read_date_list()), formatter=format_date)
 
 
-def check_date():
+def check_date() -> None:
     value = read_date('Date to check (dd.mm.yyyy): ')
     print(f'Valid date: {format_date(value)}')
 
 
-def main():
-    while True:
-        print('\n--- SESSION PLANNER ---')
-        print('1. Check a date (dd.mm.yyyy)')
-        print('2. Plan a study session (end time)')
-        print('3. Count days between two dates')
-        print('4. Sort a list of dates')
-        print('5. Exit')
-        choice = input('Select an option (1-5): ').strip()
-
-        if choice == '1':
-            print('\n--- [Running: 1. Check a date] ---')
-            check_date()
-        elif choice == '2':
-            print('\n--- [Running: 2. Plan a study session] ---')
-            plan_session()
-        elif choice == '3':
-            print('\n--- [Running: 3. Count days between two dates] ---')
-            count_days()
-        elif choice == '4':
-            print('\n--- [Running: 4. Sort a list of dates] ---')
-            show_sorted_dates()
-        elif choice == '5':
-            print('\nProgram exiting. Goodbye!')
-            break
-        else:
-            print('\n[Error]: Invalid choice. Please enter a number between 1 and 5.')
+def main() -> None:
+    run_menu('SESSION PLANNER', [
+        ('Check a date (dd.mm.yyyy)', check_date),
+        ('Plan a study session (end time)', plan_session),
+        ('Count days between two dates', count_days),
+        ('Sort a list of dates', show_sorted_dates),
+    ])
 
 
 if __name__ == '__main__':
