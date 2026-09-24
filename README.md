@@ -32,7 +32,7 @@ program starts with an empty list.
 - `oppgave5.py` – Oppgave 5, mini project: activity planner
 - `activities.json` – data file for Oppgave 5 (example data included)
 - `helpers.py` – shared input and parsing helpers used by several tasks
-- `constants.py` – date and time format strings
+- `constants.py` – date/time format strings and the allowed status values
 - `data.py` – example data for Oppgave 2 and Oppgave 5 (in-memory "database")
 - `README.md` – this file
 
@@ -49,18 +49,43 @@ imported and tested like any other module.
 The assignment says all subtasks of a main task should be in the same file.
 The task logic follows that rule. Three things are placed outside:
 
-- `helpers.py` – input and parsing functions that more than one task needs:
-  `read_integer()`, `read_text()`, `parse_date()`, `parse_time()`,
-  `format_date()`, `read_date()`, `read_time()`, `confirm()`. Duplicating them across task
-  files would violate the DRY principle. Helpers used by only one task were not
-  extracted.
-- `constants.py` – `DATE_FORMAT` and `TIME_FORMAT`, so that the formats are
-  defined in one place.
+- `helpers.py` – code that more than one task needs:
+  - input and parsing: `parse_integer()`, `read_integer()`, `read_text()`,
+    `read_choice()`, `parse_date()`, `format_date()`, `read_date()`
+  - output: `show_numbered()` – numbered list with a custom formatter and an
+    empty-list message
+  - `run_menu()` – the generic menu loop used by all five programs
+
+  Duplicating these across task files would violate the DRY principle.
+  Helpers used by only one task were *not* extracted: `parse_time()` and
+  `read_time()` live in `oppgave3.py`, `confirm()` in `oppgave5.py`.
+- `constants.py` – `DATE_FORMAT`, `TIME_FORMAT` and `STATUSES`
+  (`planned` / `completed`), so that shared values are defined in one place.
 - `data.py` – the example sessions (Oppgave 2) and sample activities
   (Oppgave 5), kept separate from the program logic as an in-memory
   "database". This makes it easy to swap in real storage later.
 
 Splitting the code across modules also demonstrates working with imports.
+
+### Design principles
+
+After all five tasks were working, the code was refactored with DRY and SOLID
+in mind:
+
+- **DRY** – the menu loop, numbered output, integer parsing and choice
+  validation existed in slightly different copies in every task. They are now
+  single functions in `helpers.py`.
+- **Single responsibility** – each function does one thing. In Oppgave 4,
+  `analyze()` computes the numbers and `format_report()` turns them into text;
+  in Oppgave 5, `load_activities()` reads the file and `merge_activities()`
+  decides what to do with the result.
+- **Open/closed** – `run_menu()` takes a list of `(label, action)` pairs. A new
+  menu item is one more tuple; the loop itself never changes. `show_numbered()`
+  takes a `formatter`, so it works for sessions, dates and activities without
+  modification.
+- **Dependency inversion (light)** – task functions receive the data they work
+  on as a parameter (`items`, `activities`) instead of reaching for a global.
+  The same function can be tested with any list.
 
 ## Oppgave 1 – Basic program flow
 
@@ -72,8 +97,9 @@ Splitting the code across modules also demonstrates working with imports.
   lowercase, reversed, and a case-insensitive check for `python`.
 - 1.3 – reads start and end as integers, iterates `range(start, end + 1)` and
   prints even numbers, numbers divisible by 3, and the sum.
-- 1.4 – menu loop; any input other than `1`–`4` shows an error and re-displays
-  the menu.
+- 1.4 – menu built with `run_menu()` from `helpers.py`: a list of
+  `(label, function)` pairs plus an automatic Exit option; any input other than
+  `1`–`4` shows an error and re-displays the menu.
 
 **Deliberate deviation in 1.3:** the assignment asks for an error message when
 the start value is greater than the end value. Instead, the program swaps the
@@ -98,8 +124,12 @@ searching and sorting straightforward.
 
 ### Structure
 
-`oppgave2.py` contains the menu and all task-specific functions: register,
-show all, show completed, search, sort by duration, statistics.
+`oppgave2.py` contains the task-specific functions: register, show all, show
+completed, search, sort by duration, statistics. Every function takes the
+session list as a parameter. `completed_sessions()` is shared by the
+"show completed" and "statistics" options so the filter is written once.
+Status is read with `read_choice('Status', STATUSES)`, which only accepts
+`planned` or `completed`.
 
 ### Validation
 
@@ -110,8 +140,9 @@ Invalid menu choices show an error and re-display the menu.
 
 ## Oppgave 3 – Functions and documentation
 
-`oppgave3.py`, with parsing helpers in `helpers.py` and formats in
-`constants.py`.
+`oppgave3.py`, with date helpers in `helpers.py` and formats in
+`constants.py`. Time parsing (`parse_time()`, `read_time()`) is only needed
+here and therefore stays in this file.
 
 ### Standard library
 
@@ -133,13 +164,13 @@ functions only read input and print the returned results.
 | Function | Location | Parameters | Returns |
 |---|---|---|---|
 | `parse_date(text)` | `helpers.py` | `str` in `dd.mm.yyyy` | `date`, or raises `ValueError` |
-| `parse_time(text)` | `helpers.py` | `str` in `hh:mm` | `time`, or raises `ValueError` |
+| `parse_time(text)` | `oppgave3.py` | `str` in `hh:mm` | `time`, or raises `ValueError` |
 | `end_time(session_date, start, minutes)` | `oppgave3.py` | `date`, `time`, `int` | `tuple[time, int]` – end time and number of days rolled over |
 | `days_between(first, second)` | `oppgave3.py` | `date`, `date` | `int`, always non-negative |
 | `sort_dates(dates)` | `oppgave3.py` | `list[date]` | new `list[date]`, chronological |
 
-`parse_date()` and `parse_time()` are placed in `helpers.py` because Oppgave 5
-needs the same date validation. `oppgave3.py` imports and uses them.
+`parse_date()` is placed in `helpers.py` because Oppgave 5 needs the same date
+validation. `oppgave3.py` imports and uses it.
 
 Both parsers check the exact string length before calling `strptime()`, since
 `%d`, `%m` and `%H` would otherwise accept single-digit values such as
@@ -184,14 +215,17 @@ that `id` is a positive integer, that `minutes` is an integer of zero or more,
 and that `is_resolved` is exactly `yes` or `no`. Rows with too many fields are
 rejected as well.
 
-Any failed check raises `ValueError` with a message that names the field and
-the value. `read_requests()` catches it, prints `Line N: skipped - <reason>`
+Integer fields are checked with `parse_field_integer()`, a thin wrapper around
+the shared `parse_integer()` from `helpers.py` that prefixes the error with the
+field name. Any failed check raises `ValueError` with a message that names the
+field and the value. `read_requests()` catches it, prints `Line N: skipped - <reason>`
 using `reader.line_num`, and continues with the next row. Valid rows are
 converted to a `Request` TypedDict with proper types (`int`, `bool`).
 
 ### 4.2 – Analysis
 
-`build_report()` computes from the valid rows only:
+`analyze()` computes from the valid rows only and returns a `Stats`
+TypedDict; it does no printing or formatting:
 
 - number of valid requests and count per category (`collections.Counter`)
 - total and average minutes, average formatted to one decimal
@@ -201,9 +235,9 @@ converted to a `Request` TypedDict with proper types (`int`, `bool`).
 
 ### 4.3 – Report
 
+`format_report()` turns the `Stats` into text with section headings;
 `write_report()` opens `support-rapport.txt` in `'w'` mode, which creates the
-file or overwrites it. The report is built from the computed values with
-section headings; nothing in it is written by hand. Messages about invalid CSV
+file or overwrites it. Nothing in the report is written by hand. Messages about invalid CSV
 rows go to the terminal only and never into the report. If no valid rows are
 found, no report is written and the program says so.
 
@@ -235,8 +269,9 @@ Errors found and fixed:
 | 3 | `return total_minutes` | `total_minutes` is never defined; `NameError` at runtime | `return total` |
 | 4 | `print(sum_resolved_minutes())` | called without the required `requests` argument; `TypeError` | pass a list of requests |
 
-The corrected version is included in `oppgave4.py` together with a small
-example list, and returns 45 for that example (18 + 27).
+The corrected `sum_resolved_minutes()` is included in `oppgave4.py` and is
+called from `main()` with a small example list; it prints
+`4.4 check: sum_resolved_minutes(example) = 45` (18 + 27).
 
 ### Test cases
 
@@ -244,8 +279,8 @@ example list, and returns 45 for that example (18 + 27).
 |---|---|---|---|
 | 1 | `1,innlogging,18,yes` | accepted | OK |
 | 2 | `4,nettverk,,no` (empty minutes) | `Line N: skipped - field minutes is empty or missing` | OK |
-| 3 | `abc,epost,10,yes` | `skipped - id is not an integer: abc` | OK |
-| 4 | `5,epost,-3,yes` | `skipped - minutes must be at least 0: -3` | OK |
+| 3 | `abc,epost,10,yes` | `skipped - id not an integer: abc` | OK |
+| 4 | `-19,nettverk,26,no` | `skipped - id must be at least 1: -19` | OK |
 | 5 | `6,epost,15,Yes` | `skipped - is_resolved must be yes or no: Yes` | OK |
 | 6 | `7,epost,15,yes,extra` (too many fields) | `skipped - too many fields` | OK |
 | 7 | `8,epost` (too few fields) | `skipped - field minutes is empty or missing` | OK |
@@ -276,10 +311,11 @@ an empty list. The menu is shown again after every action.
 | 9 | `load_activities()` + `merge_activities()` | Reads the file back; if activities already exist the user chooses replace or add |
 | 10 | `load_sample_activities()` | Loads the built-in examples from `data.py` |
 | 11 | `clear_activities()` | Deletes all activities after confirmation |
-| 12 | – | Asks whether to save, then exits |
+| 12 | `on_exit()` | Asks whether to save, then exits |
 
 Options 10 and 11 go beyond the assignment; they make it easy to demo the
-program from a clean state.
+program from a clean state. The menu itself is `run_menu()` from `helpers.py`
+with an `on_exit` callback for the save prompt.
 
 ### Class `Activity`
 
@@ -325,8 +361,10 @@ is not a list, and individual entries that fail validation (skipped with
 - Empty title or category → rejected by `read_text()`, asked again.
 - Invalid or non-existent date → rejected by `read_date()`, asked again.
 - Non-positive or non-integer minutes → rejected by `read_integer(minimum=1)`.
-- Status and sort choice → `read_integer()` with `minimum`/`maximum`, so only
-  the listed numbers are accepted.
+- Status, sort field and replace/add choice → `read_choice()`, which only
+  accepts the listed words (case-insensitive).
+- Activity number when completing → `read_integer()` with `minimum`/`maximum`
+  set to the visible range.
 - Menu choice outside 1–12 → error message, menu shown again.
 
 The program never stops on bad input; the user always gets to retry the same
@@ -336,11 +374,11 @@ action.
 
 | # | Input / situation | Expected result | Result |
 |---|---|---|---|
-| 1 | Register: `Morning run`, `sport`, `28.09.2026`, `40`, status `1` | Activity added, visible in option 2 | OK |
+| 1 | Register: `Morning run`, `sport`, `28.09.2026`, `40`, `planned` | Activity added, visible in option 2 | OK |
 | 2 | Register: empty title | Error message, asked again | OK |
 | 3 | Register: date `31.02.2026` | Error message, asked again | OK |
 | 4 | Register: minutes `0` / `abc` | Error message, asked again | OK |
-| 5 | Register: status `3` | `value must be at most 2`, asked again | OK |
+| 5 | Register: status `done` | `value must be one of: planned/completed`, asked again | OK |
 | 6 | Search `sport` | Matching activities shown | OK |
 | 7 | Search `xyz` | `No matches for 'xyz'.` | OK |
 | 8 | Sort by date | Chronological order | OK |
