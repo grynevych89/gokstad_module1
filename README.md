@@ -21,6 +21,38 @@ python3 oppgave5.py
 `activities.json` in the same folder; if the file does not exist yet the
 program starts with an empty list.
 
+## Automated tests
+
+All five programs plus `helpers.py` are covered by `test_all.py`, written
+with the standard `unittest` module — no third-party packages are needed.
+Run from the project folder:
+
+```bash
+python3 -m unittest -v test_all
+```
+
+Expected result: `Ran 46 tests ... OK`.
+
+The tests call the task functions directly. Keyboard input is simulated with
+`unittest.mock.patch('builtins.input', side_effect=[...])`, so every
+validation loop can be tested with a sequence of wrong-then-right answers.
+Terminal output is captured with `contextlib.redirect_stdout` and asserted
+on. File operations in Oppgave 4 and 5 use `tempfile.TemporaryDirectory`,
+so the real `supporthenvendelser.csv` and `activities.json` are never
+touched.
+
+| Test class | Covers |
+|---|---|
+| `HelpersTest` | `parse_integer`, `read_integer`, `read_text`, `read_choice`, `parse_date`, `format_date`, `show_numbered`, `run_menu` |
+| `Oppgave1Test` | 1.1 time calculation and rejection of `0`/text, 1.2 text analysis, 1.3 range including swapped bounds |
+| `Oppgave2Test` | registration with three invalid attempts, completed filter, case-insensitive search, sort without mutating, statistics with and without completed sessions |
+| `Oppgave3Test` | `parse_time` valid/invalid, `end_time` same day and rollover, `days_between` both orders, `sort_dates`, date list requiring one valid entry |
+| `Oppgave4Test` | `parse_row` valid and seven invalid shapes, `read_requests` skipping rows and missing file, `analyze`, `format_report`, `write_report` overwrite, `sum_resolved_minutes` |
+| `Oppgave5Test` | `Activity` round-trip and validation, `mark_completed`, registration with four invalid attempts, search/filter/sort, complete, statistics, save/load, missing file, corrupt entries, invalid JSON, merge replace/add, clear with confirmation |
+
+The manual test cases listed under each task below are the same scenarios
+run by hand in the terminal; `test_all.py` makes them repeatable.
+
 ## File structure
 
 - `oppgave1.py` – Oppgave 1, basic program flow (1.1–1.4)
@@ -34,6 +66,7 @@ program starts with an empty list.
 - `helpers.py` – shared input and parsing helpers used by several tasks
 - `constants.py` – date/time format strings and the allowed status values
 - `data.py` – example data for Oppgave 2 and Oppgave 5 (in-memory "database")
+- `test_all.py` – automated tests for all tasks (`unittest`)
 - `README.md` – this file
 
 ### File naming
@@ -414,6 +447,103 @@ is available on GitHub:
 
 https://github.com/grynevych89/gokstad_module1/commits/main
 
+## Requirements compliance
+
+Summary of how the delivered code matches the assignment text, task by task.
+
+### Oppgave 1
+
+| Requirement | Status |
+|---|---|
+| 1.1 read sessions and minutes, validate positive integers, show hours and minutes, error on empty/text/zero/negative | Done |
+| 1.2 read text, show length with/without spaces, lowercase, reversed, contains `python` case-insensitive, reject empty/blank | Done |
+| 1.3 read start and end integers, show even numbers, divisible by 3, sum, both bounds inclusive, reject non-integers | Done |
+| 1.3 error and retry when start > end | **Deviation** – values are swapped instead (see Oppgave 1 section) |
+| 1.4 menu with options 1–4, re-shown after each action, exit only on 4, error on any other input | Done |
+| All subtasks in one file | Done – `oppgave1.py`; shared input helpers in `helpers.py` |
+
+### Oppgave 2
+
+| Requirement | Status |
+|---|---|
+| `list` of `dict`/`tuple` with `topic`, `duration_minutes`, `status` | Done – `list[dict]` with `TypedDict` |
+| At least five example sessions | Done – five in `data.py` |
+| Numbered menu, re-shown after each action, runs until exit | Done |
+| Menu items 1–7 (register, show all, show completed, search, sort by duration, total/average, exit) | Done – same order |
+| Validate positive integer duration, reject empty topic and invalid status | Done |
+| Clear message on empty search/filter result | Done |
+| Explain data structure choice in README | Done |
+
+### Oppgave 3
+
+| Requirement | Status |
+|---|---|
+| Read dates, start time, duration from keyboard; validate positive integer duration | Done |
+| Function: `dd.mm.åååå` string → date value | Done – `parse_date()` in `helpers.py` |
+| Function: start time + minutes → end time | Done – `end_time()`, also reports day rollover |
+| Function: two dates → positive number of days | Done – `days_between()` |
+| Function: list of dates → chronologically sorted list | Done – `sort_dates()` |
+| Functions return values, calculation logic inside functions | Done |
+| Use a standard library found via official documentation | Done – `datetime`, title and URL in README |
+| Error and retry on invalid format, non-existent date, invalid duration | Done |
+| At least six valid and invalid test cases in README | Done – 14 |
+| All in one file | **Partial** – `parse_date()` lives in `helpers.py` because Oppgave 5 reuses it; the other three functions are in `oppgave3.py` |
+
+### Oppgave 4
+
+| Requirement | Status |
+|---|---|
+| 4.1 read CSV with UTF-8, close safely, one row at a time | Done – `with` + `csv.DictReader` |
+| 4.1 validate all fields present, `id` positive int, `minutes` int ≥ 0, `is_resolved` exactly `yes`/`no` | Done |
+| 4.1 skip invalid rows with line number and reason in terminal, continue | Done |
+| 4.2 count total and per category | Done |
+| 4.2 total and average minutes, average to one decimal | Done |
+| 4.2 resolved and unresolved counts | Done |
+| 4.2 category with most requests | Done |
+| 4.2 unresolved sorted by minutes descending | Done |
+| 4.3 generate `support-rapport.txt` on run, create or overwrite, clear headings | Done |
+| 4.3 CSV error messages not in report | Done – terminal only |
+| 4.4 fix the given code and explain each change in README | Done – four errors, table in README |
+| Targeted `try`/`except`, no bare `except` | Done |
+| Deliver `oppgave4.py`, report, unchanged CSV | Done |
+
+### Oppgave 5
+
+| Requirement | Status |
+|---|---|
+| Attributes `title`, `category`, `date`, `estimated_minutes`, `status` (`planned`/`completed`) | Done |
+| Numbered menu, re-shown after each action, runs until exit | Done |
+| 1 register and show | Done – options 1 and 2 |
+| 2 search by title or category | Done – option 3 |
+| 3 filter by status | Done – option 4 |
+| 4 sort by date or duration | Done – option 5 |
+| 5 mark as completed | Done – option 6 |
+| 6 count, total estimated time, number completed | Done – option 7 |
+| 7 save to file and load again | Done – options 8 and 9 |
+| 8 exit | Done – option 12, with save prompt |
+| Class `Activity` with the attributes and at least one method | Done – four methods |
+| At least three functions besides class methods | Done – eleven |
+| Activities in `list` or `dict` | Done – `list[Activity]` |
+| Validate menu choice, empty text, date, duration; explain and retry without stopping | Done |
+| Handle missing data file on first run with a message, continue with empty collection | Done |
+| Descriptive names, clear error messages | Done |
+| Intro-level OOP, no inheritance required | Done – no inheritance |
+| Git with meaningful commits | Done – see repository link |
+| README: function, usage, file structure, choices, ≥5 test cases, known issues, improvements | Done – 14 test cases |
+| Deliver `oppgave5.py`, supporting code, example data file, README, Git history | Done |
+| Extras not required by the assignment | Options 10 (load example data) and 11 (clear all); `on_exit` save prompt |
+
+### General
+
+| Requirement | Status |
+|---|---|
+| One Python file per main task, subtasks in the same file | **Deviation** – shared code in `helpers.py`, `constants.py`, `data.py`; task logic stays in the task file (see "Shared modules") |
+| File names `oppgave-1.py` … `oppgave-5.py` | **Deviation** – `oppgave1.py` … `oppgave5.py` (see "File naming") |
+| English identifiers, `PascalCase` classes, `snake_case` functions/variables, `UPPER_SNAKE_CASE` constants | Done |
+| README with name, run instructions, solution description, known issues, reflection | Done |
+| AI documentation or explicit statement | Done – see below |
+| Video | Delivered separately |
+
 ## AI Documentation
 
 I have used AI (Claude) to a limited extent while working on this arbeidskrav.
@@ -501,6 +631,26 @@ that the solution matched the requirements and led to no other changes.
 ### Oppgave 5
 
 No AI was used for the code of Oppgave 5.
+
+### Prompt 4 — automated tests
+
+**Prompt:** "run an analysis, add code to the README for testing all five
+programs so that anyone can run and check the code, and describe how closely
+the delivered work matches the original assignment" (originally: «проведи
+анализ, добавь код в риадми для теста всех 5 программ тестами, чтобы любой
+мог запустить и проверить код; так же описать, насколько совпадает
+выполненное задание с исходным»), with all project files attached.
+
+**Response:** the file `test_all.py` (46 `unittest` tests, standard library
+only) and the "Requirements compliance" section of this README.
+
+**How it was used and quality assured:** `test_all.py` was written by the AI
+and is included as delivered, so it should be read as AI-generated code. The
+tests only *call* my functions and assert on their behaviour; they did not
+lead to any change in the task code. I ran the suite myself
+(`python3 -m unittest -v test_all`) and checked that every test corresponds
+to a manual test case already listed in this README. The compliance tables
+were checked line by line against the assignment PDF.
 
 ### Other sources
 
