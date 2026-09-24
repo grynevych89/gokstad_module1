@@ -1,4 +1,4 @@
-from helpers import read_integer, read_text
+from helpers import read_integer, read_text, run_menu
 
 
 # 1.1 Calculate time spent
@@ -13,15 +13,15 @@ def calculation_of_time_spent():
 
 # 1.2 Analyze text
 def text_analysis():
-    text_example = read_text()
-    without_spaces = ''.join(text_example.split())
-    print(text_example)
+    text = read_text()
+    without_spaces = ''.join(text.split())
+    print(text)
     print('Length without spaces:', len(without_spaces))
-    print('Length with spaces:', len(text_example))
+    print('Length with spaces:', len(text))
     print('Without spaces:', without_spaces)
-    print('Lowercase:', text_example.lower())
-    print('Reversed:', text_example[::-1])
-    print('Contains "python":', 'python' in text_example.lower())
+    print('Lowercase:', text.lower())
+    print('Reversed:', text[::-1])
+    print('Contains "python":', 'python' in text.lower())
 
 
 # 1.3 Analyze number range
@@ -34,38 +34,18 @@ def numeric_range_analysis():
     numbers = range(start_number, end_number + 1)
     evens = [n for n in numbers if n % 2 == 0]
     div_by_three = [n for n in numbers if n % 3 == 0]
-    total_sum = sum(numbers)
     print('Even numbers:', evens)
     print('Divisible by 3:', div_by_three)
-    print('Sum:', total_sum)
+    print('Sum:', sum(numbers))
 
 
 # 1.4 Menu
 def main():
-    while True:
-        print('\n=== MENU ===')
-        print('1. Calculate time spent')
-        print('2. Analyze text')
-        print('3. Analyze number range')
-        print('4. Exit')
-        print('============')
-
-        choice = input('Select an option (1-4): ').strip()
-
-        if choice == '1':
-            print('\n--- [Running: 1. Calculate time spent] ---')
-            calculation_of_time_spent()
-        elif choice == '2':
-            print('\n--- [Running: 2. Analyze text] ---')
-            text_analysis()  # example: Hello World!@Python
-        elif choice == '3':
-            print('\n--- [Running: 3. Analyze number range] ---')
-            numeric_range_analysis()
-        elif choice == '4':
-            print('\nProgram exiting. Goodbye!')
-            break
-        else:
-            print('\n[Error]: Invalid choice. Please enter a number between 1 and 4.')
+    run_menu('MENU', [
+        ('Calculate time spent', calculation_of_time_spent),
+        ('Analyze text', text_analysis),
+        ('Analyze number range', numeric_range_analysis),
+    ])
 
 
 if __name__ == '__main__':
