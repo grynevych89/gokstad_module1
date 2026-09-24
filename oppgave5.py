@@ -1,10 +1,17 @@
 import json
 from datetime import date
+from constants import STATUSES
 from data import sample_activities
-from helpers import read_integer, read_text, read_date, format_date, parse_date, confirm
+from helpers import (
+    format_date, parse_date, read_choice, read_date,
+    read_integer, read_text, run_menu, show_numbered,
+)
 
 DATA_FILE = 'activities.json'
-STATUSES = ('planned', 'completed')
+
+
+def confirm(prompt: str) -> bool:
+    return input(f'{prompt} (y/n): ').strip().lower() == 'y'
 
 
 class Activity:
@@ -50,30 +57,23 @@ class Activity:
                 f'{self.estimated_minutes} min | {self.status}')
 
 
-def read_status(prompt: str = 'Status (1 = planned, 2 = completed): ') -> str:
-    return STATUSES[read_integer(prompt, 1, 2) - 1]
-
-
 def show_activities(items: list[Activity], empty_message: str = 'No activities to show.') -> None:
-    if not items:
-        print(empty_message)
-        return
-    for index, activity in enumerate(items, start=1):
-        print(f'{index}. {activity}')
+    show_numbered(items, empty_message)
 
 
 def register_activity(activities: list[Activity]) -> None:
-    title = read_text('Title: ').strip()
-    category = read_text('Category: ').strip()
-    activity_date = read_date('Date (dd.mm.yyyy): ')
-    minutes = read_integer('Estimated minutes: ', minimum=1)
-    status = read_status()
-    activities.append(Activity(title, category, activity_date, minutes, status))
+    activities.append(Activity(
+        read_text('Title: '),
+        read_text('Category: '),
+        read_date('Date (dd.mm.yyyy): '),
+        read_integer('Estimated minutes: ', minimum=1),
+        read_choice('Status', STATUSES),
+    ))
     print('Activity registered.')
 
 
 def search_activities(activities: list[Activity]) -> None:
-    keyword = read_text('Search word (title or category): ').strip().lower()
+    keyword = read_text('Search word (title or category): ').lower()
     matches = [
         activity for activity in activities
         if keyword in activity.title.lower() or keyword in activity.category.lower()
@@ -82,14 +82,14 @@ def search_activities(activities: list[Activity]) -> None:
 
 
 def filter_by_status(activities: list[Activity]) -> None:
-    status = read_status('Show status (1 = planned, 2 = completed): ')
+    status = read_choice('Show status', STATUSES)
     matches = [activity for activity in activities if activity.status == status]
     show_activities(matches, f'No {status} activities.')
 
 
 def sort_activities(activities: list[Activity]) -> None:
-    choice = read_integer('Sort by (1 = date, 2 = duration): ', 1, 2)
-    if choice == 1:
+    choice = read_choice('Sort by', ('date', 'duration'))
+    if choice == 'date':
         ordered = sorted(activities, key=lambda activity: activity.date)
     else:
         ordered = sorted(activities, key=lambda activity: activity.estimated_minutes, reverse=True)
@@ -160,10 +160,8 @@ def merge_activities(activities: list[Activity], new_items: list[Activity]) -> N
     if not new_items:
         return
     if activities:
-        choice = read_integer(
-            f'You already have {len(activities)} activities. (1 = replace, 2 = add): ', 1, 2
-        )
-        if choice == 1:
+        choice = read_choice(f'You already have {len(activities)} activities', ('replace', 'add'))
+        if choice == 'replace':
             activities.clear()
     activities.extend(new_items)
     print(f'Activities now: {len(activities)}')
@@ -182,62 +180,24 @@ def clear_activities(activities: list[Activity]) -> None:
 
 def main() -> None:
     activities = load_activities()
-    while True:
-        print('\n--- ACTIVITY PLANNER ---')
-        print('1. Register an activity')
-        print('2. Show all activities')
-        print('3. Search by title or category')
-        print('4. Filter by status')
-        print('5. Sort by date or duration')
-        print('6. Mark an activity as completed')
-        print('7. Show statistics')
-        print('8. Save activities to file')
-        print('9. Load activities from file')
-        print('10. Load example data')
-        print('11. Clear all activities')
-        print('12. Exit')
-        choice = input('Select an option (1-12): ').strip()
 
-        if choice == '1':
-            print('\n--- [Running: 1. Register an activity] ---')
-            register_activity(activities)
-        elif choice == '2':
-            print('\n--- [Running: 2. Show all activities] ---')
-            show_activities(activities, 'No activities registered.')
-        elif choice == '3':
-            print('\n--- [Running: 3. Search by title or category] ---')
-            search_activities(activities)
-        elif choice == '4':
-            print('\n--- [Running: 4. Filter by status] ---')
-            filter_by_status(activities)
-        elif choice == '5':
-            print('\n--- [Running: 5. Sort by date or duration] ---')
-            sort_activities(activities)
-        elif choice == '6':
-            print('\n--- [Running: 6. Mark an activity as completed] ---')
-            complete_activity(activities)
-        elif choice == '7':
-            print('\n--- [Running: 7. Show statistics] ---')
-            show_statistics(activities)
-        elif choice == '8':
-            print('\n--- [Running: 8. Save activities to file] ---')
+    def on_exit() -> None:
+        if confirm('Save changes before exit?'):
             save_activities(activities)
-        elif choice == '9':
-            print('\n--- [Running: 9. Load activities from file] ---')
-            merge_activities(activities, load_activities())
-        elif choice == '10':
-            print('\n--- [Running: 10. Load example data] ---')
-            merge_activities(activities, load_sample_activities())
-        elif choice == '11':
-            print('\n--- [Running: 11. Clear all activities] ---')
-            clear_activities(activities)
-        elif choice == '12':
-            if confirm('Save changes before exit?'):
-                save_activities(activities)
-            print('\nProgram exiting. Goodbye!')
-            break
-        else:
-            print('\n[Error]: Invalid choice. Please enter a number between 1 and 12.')
+
+    run_menu('ACTIVITY PLANNER', [
+        ('Register an activity', lambda: register_activity(activities)),
+        ('Show all activities', lambda: show_activities(activities, 'No activities registered.')),
+        ('Search by title or category', lambda: search_activities(activities)),
+        ('Filter by status', lambda: filter_by_status(activities)),
+        ('Sort by date or duration', lambda: sort_activities(activities)),
+        ('Mark an activity as completed', lambda: complete_activity(activities)),
+        ('Show statistics', lambda: show_statistics(activities)),
+        ('Save activities to file', lambda: save_activities(activities)),
+        ('Load activities from file', lambda: merge_activities(activities, load_activities())),
+        ('Load example data', lambda: merge_activities(activities, load_sample_activities())),
+        ('Clear all activities', lambda: clear_activities(activities)),
+    ], on_exit)
 
 
 if __name__ == '__main__':
