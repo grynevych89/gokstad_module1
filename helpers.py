@@ -2,16 +2,20 @@ from constants import DATE_FORMAT, TIME_FORMAT
 from datetime import date, datetime, time
 
 
-def read_integer(prompt: str, minimum: int | None = None) -> int:
+def read_integer(prompt: str, minimum: int | None = None, maximum: int | None = None) -> int:
     while True:
         try:
             value = int(input(prompt))
         except ValueError:
             print('Error: please enter a valid integer.')
             continue
-        if minimum is None or value >= minimum:
-            return value
-        print(f'Error: value must be at least {minimum}.')
+        if minimum is not None and value < minimum:
+            print(f'Error: value must be at least {minimum}.')
+            continue
+        if maximum is not None and value > maximum:
+            print(f'Error: value must be at most {maximum}.')
+            continue
+        return value
 
 
 def read_text(prompt: str = 'Enter text: ') -> str:
@@ -21,6 +25,10 @@ def read_text(prompt: str = 'Enter text: ') -> str:
             print('Error: text must not be empty or consist of spaces only!')
             continue
         return text_example
+
+
+def confirm(prompt: str) -> bool:
+    return input(f'{prompt} (y/n): ').strip().lower() == 'y'
 
 
 def parse_date(text: str) -> date:
