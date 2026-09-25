@@ -2,6 +2,7 @@
 
 **Student:** Mykola Grynevych
 **Repository:** https://github.com/grynevych89/gokstad_module1
+**Video (Oppgave 6):** https://youtu.be/fQ1jsM1fhuA
 
 ## How to run
 
@@ -549,7 +550,22 @@ Summary of how the delivered code matches the assignment text, task by task.
 | English identifiers, `PascalCase` classes, `snake_case` functions/variables, `UPPER_SNAKE_CASE` constants | Done |
 | README with name, run instructions, solution description, known issues, reflection | Done |
 | AI documentation or explicit statement | Done – see below |
-| Video | Delivered separately |
+| Video | Done – https://youtu.be/fQ1jsM1fhuA |
+
+## Oppgave 6 – Video presentation
+
+https://youtu.be/fQ1jsM1fhuA
+
+The video demonstrates and explains Oppgave 5: a typical user flow, file
+and function organisation, the `Activity` class and the list data structure,
+three key functions with parameters and return values, a valid test case in
+the live demo and the automated test suite (`test_all.py`, 46 tests covering
+the invalid cases), the CSV bug found and fixed in Oppgave 4, reflection on
+what was learned and what could be improved, and how AI was used and
+quality-assured. Language: English. Screen recording with audio.
+
+Note: I read from a prepared text in the video because of my English level.
+The program, the code and the explanations are my own.
 
 ## AI Documentation
 
